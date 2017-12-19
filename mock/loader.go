@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	lockLoaderMockLoad sync.RWMutex
+	lockLoaderMockChanges sync.RWMutex
+	lockLoaderMockLoad    sync.RWMutex
 )
 
 // LoaderMock is a mock implementation of Loader.
@@ -17,6 +18,9 @@ var (
 //
 //         // make and configure a mocked Loader
 //         mockedLoader := &LoaderMock{
+//             ChangesFunc: func() <-chan struct{} {
+// 	               panic("TODO: mock out the Changes method")
+//             },
 //             LoadFunc: func(dest interface{}) error {
 // 	               panic("TODO: mock out the Load method")
 //             },
@@ -27,17 +31,49 @@ var (
 //
 //     }
 type LoaderMock struct {
+	// ChangesFunc mocks the Changes method.
+	ChangesFunc func() <-chan struct{}
+
 	// LoadFunc mocks the Load method.
 	LoadFunc func(dest interface{}) error
 
 	// calls tracks calls to the methods.
 	calls struct {
+		// Changes holds details about calls to the Changes method.
+		Changes []struct {
+		}
 		// Load holds details about calls to the Load method.
 		Load []struct {
 			// Dest is the dest argument value.
 			Dest interface{}
 		}
 	}
+}
+
+// Changes calls ChangesFunc.
+func (mock *LoaderMock) Changes() <-chan struct{} {
+	if mock.ChangesFunc == nil {
+		panic("moq: LoaderMock.ChangesFunc is nil but Loader.Changes was just called")
+	}
+	callInfo := struct {
+	}{}
+	lockLoaderMockChanges.Lock()
+	mock.calls.Changes = append(mock.calls.Changes, callInfo)
+	lockLoaderMockChanges.Unlock()
+	return mock.ChangesFunc()
+}
+
+// ChangesCalls gets all the calls that were made to Changes.
+// Check the length with:
+//     len(mockedLoader.ChangesCalls())
+func (mock *LoaderMock) ChangesCalls() []struct {
+} {
+	var calls []struct {
+	}
+	lockLoaderMockChanges.RLock()
+	calls = mock.calls.Changes
+	lockLoaderMockChanges.RUnlock()
+	return calls
 }
 
 // Load calls LoadFunc.
