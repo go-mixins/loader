@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/pkg/errors"
 
 	"github.com/go-mixins/loader"
 )
@@ -19,7 +18,7 @@ var _ loader.Loader = (*Loader)(nil)
 
 // Load loads the target from environment
 func (l *Loader) Load(dest interface{}) error {
-	return errors.Wrap(envconfig.Process(l.prefix, dest), "load from environment")
+	return loader.Errors.Wrap(envconfig.Process(l.prefix, dest), "load from environment")
 }
 
 // Close closes underlying changes channel
