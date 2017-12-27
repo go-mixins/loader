@@ -43,7 +43,7 @@ func (l *Loader) Changes() <-chan struct{} {
 func New(prefix string, store kvStore) *Loader {
 	return &Loader{
 		store:   store,
-		prefix:  strings.Trim(prefix, "/") + "/",
+		prefix:  strings.Trim(prefix, "/"),
 		changes: make(chan struct{}),
 	}
 }
