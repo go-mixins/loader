@@ -13,7 +13,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Load loads the target from environment
+// Load loads the target from libkv source
 func (l *Loader) Load(dest interface{}) error {
 	cfg := &mapstructure.DecoderConfig{
 		Result:           dest,
