@@ -10,9 +10,9 @@ import (
 
 // Loader implements loader.Loader
 type Loader struct {
-	store   kvStore
-	prefix  string
-	changes chan struct{}
+	store         kvStore
+	prefix        string
+	changes, stop chan struct{}
 }
 
 var _ loader.Loader = (*Loader)(nil)
@@ -22,14 +22,17 @@ type kvStore interface {
 	Get(key string) (*store.KVPair, error)
 	// List the content of a given prefix
 	List(directory string) ([]*store.KVPair, error)
+	// WatchTree watches for changes on child nodes under
+	// a given directory
+	WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*store.KVPair, error)
 	// Close the store connection
 	Close()
 }
 
 // Close closes underlying changes channel
 func (l *Loader) Close() error {
+	close(l.stop)
 	l.store.Close()
-	close(l.changes)
 	return nil
 }
 
@@ -40,10 +43,28 @@ func (l *Loader) Changes() <-chan struct{} {
 }
 
 // New creates loader initialized with KV store prefix
-func New(prefix string, store kvStore) *Loader {
-	return &Loader{
+func New(prefix string, store kvStore) (res *Loader, err error) {
+	res = &Loader{
 		store:   store,
 		prefix:  strings.Trim(prefix, "/"),
 		changes: make(chan struct{}),
+		stop:    make(chan struct{}),
 	}
+	c, err := res.store.WatchTree(prefix, res.stop)
+	if err != nil {
+		err = loader.Errors.Wrap(err, "watching for prefix")
+		return
+	}
+	go func() {
+		defer close(res.changes)
+		for {
+			select {
+			case <-res.stop:
+				return
+			case <-c:
+				res.changes <- struct{}{}
+			}
+		}
+	}()
+	return
 }

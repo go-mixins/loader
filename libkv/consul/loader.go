@@ -29,7 +29,7 @@ func New(prefix string, endpoints ...string) (res *Loader) {
 		res.err = loader.Errors.Wrap(err, "creating Consul source")
 		return
 	}
-	res.Loader = libkv.New(prefix, kv)
+	res.Loader, res.err = libkv.New(prefix, kv)
 	return
 }
 

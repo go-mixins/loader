@@ -35,6 +35,10 @@ func (kvm kvMock) List(directory string) (res []*store.KVPair, err error) {
 	return
 }
 
+func (kvm kvMock) WatchTree(directory string, stopCh <-chan struct{}) (<-chan []*store.KVPair, error) {
+	return nil, nil
+}
+
 type testStruct struct {
 	B struct {
 		C int
@@ -73,9 +77,12 @@ func TestLoad(t *testing.T) {
 			]
 		}
 	`), &src)
-	loader := libkv.New("a", kv)
+	loader, err := libkv.New("a", kv)
+	if err != nil {
+		t.Fatalf("%+v", err)
+	}
 	defer loader.Close()
-	err := loader.Load(&dest)
+	err = loader.Load(&dest)
 	if err != nil {
 		t.Fatalf("%+v", err)
 	}
